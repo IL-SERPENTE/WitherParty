@@ -1,5 +1,6 @@
 package fr.blueslime.witherparty.arena;
 
+import fr.blueslime.witherparty.Messages;
 import fr.blueslime.witherparty.WitherParty;
 import net.samagames.api.games.Game;
 import org.bukkit.Bukkit;
@@ -24,8 +25,12 @@ public class Arena extends Game<ArenaPlayer>
     private final ArrayList<EntityType> notes;
     private final MusicTable witherTable;
     private final World world;
+    private ArrayList<UUID> remaining;
     private CustomEntityWither wither;
+    private Player second;
+    private Player third;
     private int wave;
+    private int time;
     private boolean canCompose;
 
     public Arena(ArrayList<MusicTable> availableTables, MusicTable witherTable)
@@ -34,13 +39,16 @@ public class Arena extends Game<ArenaPlayer>
 
         this.musicTables = new HashMap<>();
         this.notes = new ArrayList<>();
+        this.remaining = new ArrayList<>();
         this.world = Bukkit.getWorlds().get(0);
         this.availableTables = availableTables;
         this.witherTable = witherTable;
         this.wave = 0;
+        this.time = 0;
         this.canCompose = false;
     }
 
+    @Override
     public void handleLogin(Player player)
     {
         super.handleLogin(player);
@@ -54,6 +62,19 @@ public class Arena extends Game<ArenaPlayer>
         player.getInventory().setItem(8, this.gameManager.getCoherenceMachine().getLeaveItem());
     }
 
+    @Override
+    public void handleLogout(Player player)
+    {
+        super.handleLogout(player);
+
+        if(!this.isSpectator(player))
+        {
+            this.setSpectator(player);
+            this.checkEnd(player);
+        }
+    }
+
+    @Override
     public void startGame()
     {
         super.startGame();
@@ -67,7 +88,30 @@ public class Arena extends Game<ArenaPlayer>
         this.nextWave();
     }
 
-    public void lose(Player player)
+    public void win(Player player)
+    {
+        this.canCompose = false;
+    }
+
+    public void checkEnd(Player loser)
+    {
+        this.remaining.remove(loser.getUniqueId());
+
+        if(this.getInGamePlayers().size() == 1)
+        {
+            this.win(this.getInGamePlayers().values().iterator().next().getPlayerIfOnline());
+        }
+        else if(this.getInGamePlayers().size() == 2)
+        {
+            this.second = loser;
+        }
+        else if(this.getInGamePlayers().size() == 2)
+        {
+            this.third = loser;
+        }
+    }
+
+    public void lose(Player player, boolean time)
     {
         MusicTable playerTable = this.musicTables.get(player.getUniqueId());
 
@@ -77,19 +121,32 @@ public class Arena extends Game<ArenaPlayer>
         skull.setDirection(this.wither.getBukkitEntity().getLocation().getDirection().multiply(0.75F));
         skull.setMetadata("to-destroy", new FixedMetadataValue(WitherParty.getInstance(), player.getUniqueId().toString()));
 
+        if(time)
+            Bukkit.broadcastMessage(Messages.eliminatedTime.toString().replace("${PLAYER}", player.getName()));
+        else
+            Bukkit.broadcastMessage(Messages.eliminated.toString().replace("${PLAYER}", player.getName()));
+
         this.setSpectator(player);
+        this.checkEnd(player);
     }
 
     public void nextWave()
     {
+        for(UUID remainingPlayer : this.remaining)
+           this.lose(Bukkit.getPlayer(remainingPlayer), true);
+
         this.notes.clear();
         this.canCompose = false;
 
         for(ArenaPlayer player : this.getInGamePlayers().values())
         {
             player.resetNotes();
+            player.getPlayerIfOnline().setLevel(0);
             this.addCoins(player.getPlayerIfOnline(), 1, "Vague passée");
         }
+
+        this.remaining.clear();
+        this.remaining.addAll(this.getInGamePlayers().keySet());
 
         new BukkitRunnable()
         {
@@ -105,6 +162,8 @@ public class Arena extends Game<ArenaPlayer>
                 notes.add(entityType);
                 witherTable.play(entityType);
 
+                time += 2;
+
                 this.loops++;
 
                 if(this.loops == wave)
@@ -112,12 +171,44 @@ public class Arena extends Game<ArenaPlayer>
             }
         }.runTaskTimer(WitherParty.getInstance(), 20L * 2, 20L * 2);
 
+        Bukkit.broadcastMessage(Messages.yourTurn.toString());
         this.canCompose = true;
+
+        new BukkitRunnable()
+        {
+            private int timer = time;
+
+            @Override
+            public void run()
+            {
+                for(UUID remainingPlayer : remaining)
+                {
+                    Player player = Bukkit.getPlayer(remainingPlayer);
+                    player.setLevel(this.timer);
+
+                    if(this.timer < 5)
+                        player.playSound(player.getLocation(), Sound.NOTE_PIANO, 1.0F, 1.0F);
+                }
+
+                this.timer--;
+
+                if(this.timer == 0)
+                {
+                    nextWave();
+                    this.cancel();
+                }
+            }
+        }.runTaskTimerAsynchronously(WitherParty.getInstance(), 20L * 2, 20L * 2);
     }
 
     public EntityType getNoteAt(int array)
     {
         return this.notes.get(array);
+    }
+
+    public MusicTable getPlayerTable(UUID uuid)
+    {
+        return this.musicTables.get(uuid);
     }
 
     public boolean canCompose()

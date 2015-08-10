@@ -3,11 +3,13 @@ package fr.blueslime.witherparty;
 import fr.blueslime.witherparty.arena.Arena;
 import fr.blueslime.witherparty.arena.ArenaManager;
 import fr.blueslime.witherparty.arena.CustomEntityWither;
-import net.minecraft.server.BiomeBase;
-import net.minecraft.server.EntityInsentient;
-import net.minecraft.server.EntityTypes;
-import net.minecraft.server.EntityWither;
+import fr.blueslime.witherparty.events.*;
+import net.minecraft.server.v1_8_R3.BiomeBase;
+import net.minecraft.server.v1_8_R3.EntityInsentient;
+import net.minecraft.server.v1_8_R3.EntityTypes;
+import net.minecraft.server.v1_8_R3.EntityWither;
 import net.samagames.api.SamaGamesAPI;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Field;
@@ -33,7 +35,11 @@ public class WitherParty extends JavaPlugin
 
     public void registerEvents()
     {
-
+        Bukkit.getPluginManager().registerEvents(new WPBlockBreakEvent(this, this.arena), this);
+        Bukkit.getPluginManager().registerEvents(new WPBlockPlaceEvent(this, this.arena), this);
+        Bukkit.getPluginManager().registerEvents(new WPEntityDamageByEntityEvent(this, this.arena), this);
+        Bukkit.getPluginManager().registerEvents(new WPEntityDamageEvent(this, this.arena), this);
+        Bukkit.getPluginManager().registerEvents(new WPPlayerInteractEvent(this, this.arena), this);
     }
 
     public void registerEntity(String name, int id, Class<? extends EntityInsentient> nmsClass, Class<? extends EntityInsentient> customClass)
