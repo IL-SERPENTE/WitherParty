@@ -2,20 +2,26 @@ package fr.blueslime.witherparty.arena;
 
 import fr.blueslime.witherparty.Messages;
 import fr.blueslime.witherparty.WitherParty;
+import net.samagames.api.SamaGamesAPI;
 import net.samagames.api.games.Game;
-import org.bukkit.Bukkit;
-import org.bukkit.Sound;
-import org.bukkit.World;
+import net.samagames.api.games.themachine.messages.templates.PlayerLeaderboardWinTemplate;
+import net.samagames.tools.ColorUtils;
+import net.samagames.tools.scoreboards.ObjectiveSign;
+import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.WitherSkull;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.UUID;
 
 public class Arena extends Game<ArenaPlayer>
@@ -27,6 +33,7 @@ public class Arena extends Game<ArenaPlayer>
     private final World world;
     private ArrayList<UUID> remaining;
     private CustomEntityWither wither;
+    private ObjectiveSign objective;
     private Player second;
     private Player third;
     private int wave;
@@ -46,6 +53,8 @@ public class Arena extends Game<ArenaPlayer>
         this.wave = 0;
         this.time = 0;
         this.canCompose = false;
+
+        this.objective = new ObjectiveSign("witherparty", ChatColor.GREEN + "" + ChatColor.BOLD + "WitherParty" + ChatColor.WHITE + " | " + ChatColor.AQUA + "00:00");
     }
 
     @Override
@@ -57,6 +66,8 @@ public class Arena extends Game<ArenaPlayer>
 
         this.availableTables.remove(0);
         this.musicTables.put(player.getUniqueId(), selected);
+        this.objective.addReceiver(player);
+        this.setupPlayer(player);
 
         player.teleport(selected.getSpawn());
         player.getInventory().setItem(8, this.gameManager.getCoherenceMachine().getLeaveItem());
@@ -85,12 +96,92 @@ public class Arena extends Game<ArenaPlayer>
         this.wither = new CustomEntityWither(((CraftWorld) this.world).getHandle());
         ((CraftWorld) this.world).addEntity(this.wither, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
+        for(ArenaPlayer player : this.getInGamePlayers().values())
+        {
+            this.increaseStat(player.getUUID(), "played_games", 1);
+        }
+
+        Bukkit.getScheduler().runTaskTimerAsynchronously(WitherParty.getInstance(), new Runnable()
+        {
+            private int time = 0;
+
+            @Override
+            public void run()
+            {
+                this.time++;
+                objective.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "WitherParty" + ChatColor.WHITE + " | " + ChatColor.AQUA + this.formatTime(this.time));
+                updateScoreboard();
+            }
+
+            public String formatTime(int time)
+            {
+                int mins = time / 60;
+                int remainder = time - mins * 60;
+                int secs = remainder;
+
+                String secsSTR = (secs < 10) ? "0" + secs : secs + "";
+
+                return mins + ":" + secsSTR;
+            }
+        }, 0L, 20L);
+
         this.nextWave();
     }
 
-    public void win(Player player)
+    public void win(ArenaPlayer player)
     {
         this.canCompose = false;
+
+        PlayerLeaderboardWinTemplate template = SamaGamesAPI.get().getGameManager().getCoherenceMachine().getTemplateManager().getPlayerLeaderboardWinTemplate();
+        template.execute(player.getPlayerIfOnline(), this.second, this.third);
+
+        this.addCoins(player.getPlayerIfOnline(), 50, "Premier");
+        this.addCoins(this.second, 25, "Second");
+        this.addCoins(this.third, 10, "Troisième");
+
+        this.addStars(player.getPlayerIfOnline(), 2, "Victoire");
+        this.increaseStat(player.getUUID(), "wins", 1);
+
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(WitherParty.getInstance(), new Runnable() {
+            int number = (int) (10 * 1.5);
+            int count = 0;
+
+            public void run() {
+                if (this.count >= this.number || player.getPlayerIfOnline() == null)
+                    return;
+
+                Firework fw = (Firework) player.getPlayerIfOnline().getWorld().spawnEntity(player.getPlayerIfOnline().getLocation(), EntityType.FIREWORK);
+                FireworkMeta fwm = fw.getFireworkMeta();
+
+                Random r = new Random();
+
+                int rt = r.nextInt(4) + 1;
+                FireworkEffect.Type type = FireworkEffect.Type.BALL;
+                if (rt == 1) type = FireworkEffect.Type.BALL;
+                if (rt == 2) type = FireworkEffect.Type.BALL_LARGE;
+                if (rt == 3) type = FireworkEffect.Type.BURST;
+                if (rt == 4) type = FireworkEffect.Type.CREEPER;
+                if (rt == 5) type = FireworkEffect.Type.STAR;
+
+                int r1i = r.nextInt(17) + 1;
+                int r2i = r.nextInt(17) + 1;
+                Color c1 = ColorUtils.getColor(r1i);
+                Color c2 = ColorUtils.getColor(r2i);
+
+                FireworkEffect effect = FireworkEffect.builder().flicker(r.nextBoolean()).withColor(c1).withFade(c2).with(type).trail(r.nextBoolean()).build();
+
+                fwm.addEffect(effect);
+
+                int rp = r.nextInt(2) + 1;
+                fwm.setPower(rp);
+
+                fw.setFireworkMeta(fwm);
+
+                this.count++;
+            }
+        }, 5L, 5L);
+
+        this.handleGameEnd();
     }
 
     public void checkEnd(Player loser)
@@ -99,7 +190,7 @@ public class Arena extends Game<ArenaPlayer>
 
         if(this.getInGamePlayers().size() == 1)
         {
-            this.win(this.getInGamePlayers().values().iterator().next().getPlayerIfOnline());
+            this.win(this.getInGamePlayers().values().iterator().next());
         }
         else if(this.getInGamePlayers().size() == 2)
         {
@@ -199,6 +290,29 @@ public class Arena extends Game<ArenaPlayer>
                 }
             }
         }.runTaskTimerAsynchronously(WitherParty.getInstance(), 20L * 2, 20L * 2);
+    }
+
+    public void setupPlayer(Player player)
+    {
+        player.setGameMode(GameMode.ADVENTURE);
+        player.setHealth(20.0D);
+        player.setSaturation(20);
+        player.getInventory().clear();
+        player.setExp(0.0F);
+        player.setLevel(0);
+
+        for(PotionEffect pe : player.getActivePotionEffects())
+            player.removePotionEffect(pe.getType());
+    }
+
+    public void updateScoreboard()
+    {
+        this.objective.setLine(0, ChatColor.GRAY + "Niveau: " + ChatColor.WHITE + this.wave);
+        this.objective.setLine(1, ChatColor.GRAY + "Notes: " + ChatColor.WHITE + this.notes.size());
+        this.objective.setLine(2, ChatColor.WHITE + "");
+        this.objective.setLine(3, ChatColor.GRAY + "Joueurs: " + ChatColor.WHITE + this.remaining.size());
+
+        this.objective.updateLines();
     }
 
     public EntityType getNoteAt(int array)

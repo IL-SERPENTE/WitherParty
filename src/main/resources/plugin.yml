@@ -1,0 +1,8 @@
+name: WitherParty
+main: fr.blueslime.witherparty.WitherParty
+version: 1.0
+
+depend: [SamaGamesAPI]
+
+author: BlueSlime
+website: http://blueslime.fr

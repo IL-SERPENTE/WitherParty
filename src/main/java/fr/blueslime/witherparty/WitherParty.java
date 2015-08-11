@@ -39,6 +39,7 @@ public class WitherParty extends JavaPlugin
         Bukkit.getPluginManager().registerEvents(new WPBlockPlaceEvent(this, this.arena), this);
         Bukkit.getPluginManager().registerEvents(new WPEntityDamageByEntityEvent(this, this.arena), this);
         Bukkit.getPluginManager().registerEvents(new WPEntityDamageEvent(this, this.arena), this);
+        Bukkit.getPluginManager().registerEvents(new WPEntityExplodeEvent(this, this.arena), this);
         Bukkit.getPluginManager().registerEvents(new WPPlayerInteractEvent(this, this.arena), this);
     }
 
