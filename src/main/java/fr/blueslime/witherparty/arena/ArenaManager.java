@@ -12,7 +12,7 @@ public class ArenaManager
 {
     public Arena loadArena()
     {
-        JsonObject jsonArena = SamaGamesAPI.get().getGameManager().getGameProperties().getMapProperties();
+        JsonObject jsonArena = SamaGamesAPI.get().getGameManager().getGameProperties().getConfigs();
 
         JsonArray jsonPlayerTables = jsonArena.get("playerTables").getAsJsonArray();
         ArrayList<MusicTable> availableTables = new ArrayList<>();
