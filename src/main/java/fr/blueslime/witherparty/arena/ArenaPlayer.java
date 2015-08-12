@@ -18,7 +18,7 @@ public class ArenaPlayer extends GamePlayer
     {
         if(WitherParty.getInstance().getArena().getNoteAt(this.notes) != type)
         {
-            WitherParty.getInstance().getArena().lose(this.getPlayerIfOnline());
+            WitherParty.getInstance().getArena().lose(this.getPlayerIfOnline(), false);
             return;
         }
 
