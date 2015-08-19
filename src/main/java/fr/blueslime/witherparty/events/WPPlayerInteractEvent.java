@@ -4,21 +4,23 @@ import fr.blueslime.witherparty.WitherParty;
 import fr.blueslime.witherparty.arena.Arena;
 import fr.blueslime.witherparty.arena.MusicTable;
 import org.bukkit.Material;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 
-public class WPPlayerInteractEvent extends AbstractEvent<PlayerInteractEvent>
+public class WPPlayerInteractEvent extends WPEvent implements Listener
 {
     public WPPlayerInteractEvent(WitherParty plugin, Arena arena)
     {
         super(plugin, arena);
     }
 
-    @Override
+    @EventHandler
     public void event(PlayerInteractEvent event)
     {
         event.setCancelled(true);
 
-        if(this.arena.canCompose() && !this.arena.getPlayer(event.getPlayer().getUniqueId()).isSpectator())
+        if(this.arena.canCompose(event.getPlayer()) && !this.arena.getPlayer(event.getPlayer().getUniqueId()).isSpectator())
         {
             if (event.getClickedBlock() != null)
             {

@@ -6,8 +6,10 @@ import org.bukkit.ChatColor;
 public enum Messages
 {
     yourTurn(ChatColor.GREEN + "A vous de jouer !", true),
+    listen(ChatColor.GOLD + "Ecoutez...", true),
     eliminated(ChatColor.RED + "${PLAYER} a fait une fausse note !", true),
-    eliminatedTime(ChatColor.RED + "${PLAYER} s'est fait éliminé car il n'a pas composé dans les temps !", true);
+    eliminatedTime(ChatColor.RED + "${PLAYER} s'est fait éliminé car il n'a pas composé dans les temps !", true),
+    correct(ChatColor.GREEN + "${PLAYER} a reproduit la mélodie correctement !", true);
 
     private String message;
     private boolean tag;

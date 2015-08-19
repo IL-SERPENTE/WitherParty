@@ -4,18 +4,20 @@ import fr.blueslime.witherparty.WitherParty;
 import fr.blueslime.witherparty.arena.Arena;
 import fr.blueslime.witherparty.arena.MusicTable;
 import org.bukkit.entity.EntityType;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityExplodeEvent;
 
 import java.util.UUID;
 
-public class WPEntityExplodeEvent extends AbstractEvent<EntityExplodeEvent>
+public class WPEntityExplodeEvent extends WPEvent implements Listener
 {
     public WPEntityExplodeEvent(WitherParty plugin, Arena arena)
     {
         super(plugin, arena);
     }
 
-    @Override
+    @EventHandler
     public void event(EntityExplodeEvent event)
     {
         if(event.getEntityType() == EntityType.WITHER_SKULL)

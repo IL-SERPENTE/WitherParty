@@ -4,8 +4,10 @@ import fr.blueslime.witherparty.Messages;
 import fr.blueslime.witherparty.WitherParty;
 import net.samagames.api.SamaGamesAPI;
 import net.samagames.api.games.Game;
+import net.samagames.api.games.GamePlayer;
 import net.samagames.api.games.themachine.messages.templates.PlayerLeaderboardWinTemplate;
 import net.samagames.tools.ColorUtils;
+import net.samagames.tools.Titles;
 import net.samagames.tools.scoreboards.ObjectiveSign;
 import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
@@ -18,13 +20,11 @@ import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
-public class Arena extends Game<ArenaPlayer>
+public class Arena extends Game<GamePlayer>
 {
     private final HashMap<UUID, MusicTable> musicTables;
     private final ArrayList<MusicTable> availableTables;
@@ -36,13 +36,15 @@ public class Arena extends Game<ArenaPlayer>
     private ObjectiveSign objective;
     private Player second;
     private Player third;
+    private BukkitTask dingTask;
+    private BukkitTask gameTime;
     private int wave;
     private int time;
     private boolean canCompose;
 
     public Arena(ArrayList<MusicTable> availableTables, MusicTable witherTable)
     {
-        super("arcade", "WitherParty", ArenaPlayer.class);
+        super("arcade", "WitherParty", GamePlayer.class);
 
         this.musicTables = new HashMap<>();
         this.notes = new ArrayList<>();
@@ -55,6 +57,11 @@ public class Arena extends Game<ArenaPlayer>
         this.canCompose = false;
 
         this.objective = new ObjectiveSign("witherparty", ChatColor.GREEN + "" + ChatColor.BOLD + "WitherParty" + ChatColor.WHITE + " | " + ChatColor.AQUA + "00:00");
+
+        this.world.setGameRuleValue("doDaylightCycle", "false");
+        this.world.setTime(6000L);
+
+        Collections.shuffle(this.availableTables, new Random(System.currentTimeMillis()));
     }
 
     @Override
@@ -63,6 +70,7 @@ public class Arena extends Game<ArenaPlayer>
         super.handleLogin(player);
 
         MusicTable selected = this.availableTables.get(0);
+        selected.setOwner(player.getUniqueId());
 
         this.availableTables.remove(0);
         this.musicTables.put(player.getUniqueId(), selected);
@@ -86,6 +94,12 @@ public class Arena extends Game<ArenaPlayer>
     }
 
     @Override
+    public void handleModeratorLogin(Player player)
+    {
+        this.objective.addReceiver(player);
+    }
+
+    @Override
     public void startGame()
     {
         super.startGame();
@@ -95,13 +109,14 @@ public class Arena extends Game<ArenaPlayer>
 
         this.wither = new CustomEntityWither(((CraftWorld) this.world).getHandle());
         ((CraftWorld) this.world).addEntity(this.wither, CreatureSpawnEvent.SpawnReason.CUSTOM);
+        this.wither.teleportTo(this.witherTable.getSpawn(), false);
 
-        for(ArenaPlayer player : this.getInGamePlayers().values())
+        for(GamePlayer player : this.getInGamePlayers().values())
         {
             this.increaseStat(player.getUUID(), "played_games", 1);
         }
 
-        Bukkit.getScheduler().runTaskTimerAsynchronously(WitherParty.getInstance(), new Runnable()
+        this.gameTime = Bukkit.getScheduler().runTaskTimerAsynchronously(WitherParty.getInstance(), new Runnable()
         {
             private int time = 0;
 
@@ -128,8 +143,12 @@ public class Arena extends Game<ArenaPlayer>
         this.nextWave();
     }
 
-    public void win(ArenaPlayer player)
+    public void win(GamePlayer player)
     {
+        this.gameTime.cancel();
+        this.increaseStat(player.getUUID(), "wins", 1);
+
+        this.dingTask.cancel();
         this.canCompose = false;
 
         PlayerLeaderboardWinTemplate template = SamaGamesAPI.get().getGameManager().getCoherenceMachine().getTemplateManager().getPlayerLeaderboardWinTemplate();
@@ -142,11 +161,13 @@ public class Arena extends Game<ArenaPlayer>
         this.addStars(player.getPlayerIfOnline(), 2, "Victoire");
         this.increaseStat(player.getUUID(), "wins", 1);
 
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(WitherParty.getInstance(), new Runnable() {
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(WitherParty.getInstance(), new Runnable()
+        {
             int number = (int) (10 * 1.5);
             int count = 0;
 
-            public void run() {
+            public void run()
+            {
                 if (this.count >= this.number || player.getPlayerIfOnline() == null)
                     return;
 
@@ -190,11 +211,8 @@ public class Arena extends Game<ArenaPlayer>
 
         if(this.getInGamePlayers().size() == 1)
         {
-            this.win(this.getInGamePlayers().values().iterator().next());
-        }
-        else if(this.getInGamePlayers().size() == 2)
-        {
             this.second = loser;
+            this.win(this.getInGamePlayers().values().iterator().next());
         }
         else if(this.getInGamePlayers().size() == 2)
         {
@@ -208,36 +226,74 @@ public class Arena extends Game<ArenaPlayer>
 
         this.wither.getBukkitEntity().getLocation().setDirection(playerTable.getSpawn().toVector().subtract(this.wither.getBukkitEntity().getLocation().toVector()));
 
-        WitherSkull skull = this.world.spawn(this.wither.getBukkitEntity().getLocation(), WitherSkull.class);
-        skull.setDirection(this.wither.getBukkitEntity().getLocation().getDirection().multiply(0.75F));
-        skull.setMetadata("to-destroy", new FixedMetadataValue(WitherParty.getInstance(), player.getUniqueId().toString()));
+        Bukkit.getScheduler().runTask(WitherParty.getInstance(), () ->
+        {
+            WitherSkull skull = this.world.spawn(this.wither.getBukkitEntity().getLocation(), WitherSkull.class);
+            skull.setDirection(this.wither.getBukkitEntity().getLocation().getDirection().multiply(0.75F));
+            skull.setMetadata("to-destroy", new FixedMetadataValue(WitherParty.getInstance(), player.getUniqueId().toString()));
+        });
 
         if(time)
             Bukkit.broadcastMessage(Messages.eliminatedTime.toString().replace("${PLAYER}", player.getName()));
         else
             Bukkit.broadcastMessage(Messages.eliminated.toString().replace("${PLAYER}", player.getName()));
 
-        this.setSpectator(player);
-        this.checkEnd(player);
+        Bukkit.getScheduler().runTaskLater(WitherParty.getInstance(), () ->
+        {
+            this.setSpectator(player);
+            this.checkEnd(player);
+        }, 5L);
+    }
+
+    public void correct(Player player)
+    {
+        this.remaining.remove(player.getUniqueId());
+        Bukkit.broadcastMessage(Messages.correct.toString().replace("${PLAYER}", player.getName()));
+
+        player.setLevel(0);
+
+        if(this.remaining.isEmpty())
+            this.nextWave();
     }
 
     public void nextWave()
     {
-        for(UUID remainingPlayer : this.remaining)
-           this.lose(Bukkit.getPlayer(remainingPlayer), true);
+        if(this.dingTask != null)
+            this.dingTask.cancel();
+
+        if(!this.remaining.isEmpty())
+        {
+            for(UUID remainingPlayer : this.remaining)
+                this.lose(Bukkit.getPlayer(remainingPlayer), true);
+
+            if(this.getInGamePlayers().size() == 1)
+                return;
+        }
+
+        if(this.wave != 0)
+        {
+            for(GamePlayer player : this.getInGamePlayers().values())
+            {
+                this.getPlayerTable(player.getUUID()).resetNotes();
+                this.addCoins(player.getPlayerIfOnline(), 1, "Vague passée");
+            }
+        }
 
         this.notes.clear();
         this.canCompose = false;
 
-        for(ArenaPlayer player : this.getInGamePlayers().values())
-        {
-            player.resetNotes();
-            player.getPlayerIfOnline().setLevel(0);
-            this.addCoins(player.getPlayerIfOnline(), 1, "Vague passée");
-        }
-
         this.remaining.clear();
         this.remaining.addAll(this.getInGamePlayers().keySet());
+
+        this.wave++;
+
+        for(GamePlayer player : this.getInGamePlayers().values())
+        {
+            player.getPlayerIfOnline().sendMessage(Messages.listen.toString());
+            Titles.sendTitle(player.getPlayerIfOnline(), 0, 20 * 2, 20, ChatColor.GOLD + "♪", ChatColor.GOLD + "" + ChatColor.BOLD + "Ecoutez...");
+        }
+
+        this.time = 0;
 
         new BukkitRunnable()
         {
@@ -257,39 +313,47 @@ public class Arena extends Game<ArenaPlayer>
 
                 this.loops++;
 
-                if(this.loops == wave)
-                    this.cancel();
-            }
-        }.runTaskTimer(WitherParty.getInstance(), 20L * 2, 20L * 2);
-
-        Bukkit.broadcastMessage(Messages.yourTurn.toString());
-        this.canCompose = true;
-
-        new BukkitRunnable()
-        {
-            private int timer = time;
-
-            @Override
-            public void run()
-            {
-                for(UUID remainingPlayer : remaining)
+                if(this.loops == (wave + 1))
                 {
-                    Player player = Bukkit.getPlayer(remainingPlayer);
-                    player.setLevel(this.timer);
+                    Bukkit.getScheduler().runTaskLater(WitherParty.getInstance(), () ->
+                    {
+                        for(GamePlayer player : getInGamePlayers().values())
+                        {
+                            player.getPlayerIfOnline().sendMessage(Messages.yourTurn.toString());
+                            Titles.sendTitle(player.getPlayerIfOnline(), 0, 20 * 2, 20, ChatColor.GREEN + "♪", ChatColor.GREEN + "" + ChatColor.BOLD + "A vous de jouer !");
+                        }
 
-                    if(this.timer < 5)
-                        player.playSound(player.getLocation(), Sound.NOTE_PIANO, 1.0F, 1.0F);
-                }
+                        canCompose = true;
 
-                this.timer--;
+                        dingTask = new BukkitRunnable()
+                        {
+                            private int timer = time;
 
-                if(this.timer == 0)
-                {
-                    nextWave();
+                            @Override
+                            public void run()
+                            {
+                                this.timer--;
+
+                                for(UUID remainingPlayer : remaining)
+                                {
+                                    Player player = Bukkit.getPlayer(remainingPlayer);
+                                    player.setLevel(this.timer);
+
+                                    if(this.timer < 5)
+                                        player.playSound(player.getLocation(), Sound.NOTE_PIANO, 1.0F, 1.0F);
+                                }
+
+                                if(this.timer == 0)
+                                    if(getInGamePlayers().size() != 1)
+                                        nextWave();
+                            }
+                        }.runTaskTimerAsynchronously(WitherParty.getInstance(), 20L * 2, 20L * 2);
+                    }, 20L);
+
                     this.cancel();
                 }
             }
-        }.runTaskTimerAsynchronously(WitherParty.getInstance(), 20L * 2, 20L * 2);
+        }.runTaskTimer(WitherParty.getInstance(), 20L * 3, 20L * 3);
     }
 
     public void setupPlayer(Player player)
@@ -325,8 +389,13 @@ public class Arena extends Game<ArenaPlayer>
         return this.musicTables.get(uuid);
     }
 
-    public boolean canCompose()
+    public int getNoteCount()
     {
-        return this.canCompose;
+        return this.notes.size();
+    }
+
+    public boolean canCompose(Player player)
+    {
+        return (this.canCompose && this.remaining.contains(player.getUniqueId()));
     }
 }

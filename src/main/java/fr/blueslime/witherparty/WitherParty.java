@@ -26,7 +26,7 @@ public class WitherParty extends JavaPlugin
     {
         instance = this;
 
-        this.registerEntity("GodWither", 64, EntityWither.class, CustomEntityWither.class);
+        this.registerEntity("WitherBoss", 64, EntityWither.class, CustomEntityWither.class);
         this.arena = new ArenaManager().loadArena();
         this.registerEvents();
 
@@ -37,10 +37,12 @@ public class WitherParty extends JavaPlugin
     {
         Bukkit.getPluginManager().registerEvents(new WPBlockBreakEvent(this, this.arena), this);
         Bukkit.getPluginManager().registerEvents(new WPBlockPlaceEvent(this, this.arena), this);
+        Bukkit.getPluginManager().registerEvents(new WPCreatureSpawnEvent(this, this.arena), this);
         Bukkit.getPluginManager().registerEvents(new WPEntityDamageByEntityEvent(this, this.arena), this);
         Bukkit.getPluginManager().registerEvents(new WPEntityDamageEvent(this, this.arena), this);
         Bukkit.getPluginManager().registerEvents(new WPEntityExplodeEvent(this, this.arena), this);
         Bukkit.getPluginManager().registerEvents(new WPPlayerInteractEvent(this, this.arena), this);
+        Bukkit.getPluginManager().registerEvents(new WPPlayerMoveEvent(this, this.arena), this);
     }
 
     public void registerEntity(String name, int id, Class<? extends EntityInsentient> nmsClass, Class<? extends EntityInsentient> customClass)

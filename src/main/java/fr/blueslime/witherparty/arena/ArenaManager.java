@@ -39,6 +39,8 @@ public class ArenaManager
 
                 musicTable.addInstrument(entity, LocationUtils.str2loc(jsonPlayerTableInstrument.get("location").getAsString()));
             }
+
+            availableTables.add(musicTable);
         }
 
         JsonObject jsonWitherTable = jsonArena.get("witherTable").getAsJsonObject();
