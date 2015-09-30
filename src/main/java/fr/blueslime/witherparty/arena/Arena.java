@@ -44,7 +44,7 @@ public class Arena extends Game<GamePlayer>
 
     public Arena(ArrayList<MusicTable> availableTables, MusicTable witherTable)
     {
-        super("arcade", "WitherParty", GamePlayer.class);
+        super("arcade", "WitherParty", "Construisez votre symphonie !", GamePlayer.class);
 
         this.musicTables = new HashMap<>();
         this.notes = new ArrayList<>();
@@ -68,8 +68,8 @@ public class Arena extends Game<GamePlayer>
     public void handlePostRegistration()
     {
         super.handlePostRegistration();
-
         this.coherenceMachine.setStartCountdownCatchPhrase("Préparez vos instruments !");
+        this.coherenceMachine.setNameShortcut("WP");
     }
 
     @Override
