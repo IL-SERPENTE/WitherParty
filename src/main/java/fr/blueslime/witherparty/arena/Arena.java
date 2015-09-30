@@ -65,6 +65,14 @@ public class Arena extends Game<GamePlayer>
     }
 
     @Override
+    public void handlePostRegistration()
+    {
+        super.handlePostRegistration();
+
+        this.coherenceMachine.setStartCountdownCatchPhrase("Préparez vos instruments !");
+    }
+
+    @Override
     public void handleLogin(Player player)
     {
         super.handleLogin(player);
