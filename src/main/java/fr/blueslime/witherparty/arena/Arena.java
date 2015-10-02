@@ -124,7 +124,10 @@ public class Arena extends Game<GamePlayer>
         w.addEntity(this.wither, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
         for(GamePlayer player : this.getInGamePlayers().values())
+        {
             this.increaseStat(player.getUUID(), "played_games", 1);
+            player.getPlayerIfOnline().setLevel(0);
+        }
 
         this.gameTime = Bukkit.getScheduler().runTaskTimerAsynchronously(WitherParty.getInstance(), new Runnable()
         {
@@ -242,12 +245,12 @@ public class Arena extends Game<GamePlayer>
 
         Bukkit.getScheduler().runTask(WitherParty.getInstance(), () ->
         {
-            Location baseLocation = this.wither.getBukkitEntity().getLocation().add(0.0D, 3.5D, 0.0D);
+            Location baseLocation = this.wither.getBukkitEntity().getLocation().add(0.0D, 5.0D, 0.0D);
             org.bukkit.util.Vector entityVector = new org.bukkit.util.Vector(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ());
             org.bukkit.util.Vector witherVector = new org.bukkit.util.Vector(baseLocation.getX(), baseLocation.getY(), baseLocation.getZ());
 
             WitherSkull skull = this.world.spawn(baseLocation, WitherSkull.class);
-            skull.setDirection(witherVector.subtract(entityVector).normalize().multiply(0.25F));
+            skull.setDirection(witherVector.subtract(entityVector).normalize());
             skull.setMetadata("to-destroy", new FixedMetadataValue(WitherParty.getInstance(), player.getUniqueId().toString()));
 
             new BukkitRunnable()
@@ -266,7 +269,7 @@ public class Arena extends Game<GamePlayer>
             }.runTaskTimer(WitherParty.getInstance(), 5L, 5L);
         });
 
-        this.world.createExplosion(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ(), 8.0F, true, true);
+        this.world.createExplosion(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ(), 5.0F, true, true);
 
         if(time)
             Bukkit.broadcastMessage(Messages.eliminatedTime.toString().replace("${PLAYER}", player.getName()));
