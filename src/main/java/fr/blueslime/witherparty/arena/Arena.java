@@ -8,6 +8,7 @@ import net.samagames.api.games.Game;
 import net.samagames.api.games.GamePlayer;
 import net.samagames.api.games.themachine.messages.templates.PlayerLeaderboardWinTemplate;
 import net.samagames.tools.ColorUtils;
+import net.samagames.tools.ParticleEffect;
 import net.samagames.tools.Titles;
 import net.samagames.tools.scoreboards.ObjectiveSign;
 import org.bukkit.*;
@@ -241,14 +242,31 @@ public class Arena extends Game<GamePlayer>
 
         Bukkit.getScheduler().runTask(WitherParty.getInstance(), () ->
         {
-            Location baseLocation = this.wither.getBukkitEntity().getLocation().add(0.0D, 2.0D, 0.0D);
+            Location baseLocation = this.wither.getBukkitEntity().getLocation().add(0.0D, 3.5D, 0.0D);
             org.bukkit.util.Vector entityVector = new org.bukkit.util.Vector(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ());
             org.bukkit.util.Vector witherVector = new org.bukkit.util.Vector(baseLocation.getX(), baseLocation.getY(), baseLocation.getZ());
 
             WitherSkull skull = this.world.spawn(baseLocation, WitherSkull.class);
             skull.setVelocity(witherVector.add(entityVector).normalize().multiply(0.25F));
             skull.setMetadata("to-destroy", new FixedMetadataValue(WitherParty.getInstance(), player.getUniqueId().toString()));
+
+            new BukkitRunnable()
+            {
+                @Override
+                public void run()
+                {
+                    if(skull.isDead())
+                    {
+                        this.cancel();
+                        return;
+                    }
+
+                    ParticleEffect.FIREWORKS_SPARK.display(0.0F, 0.0F, 0.0F, 0.0F, 2, skull.getLocation());
+                }
+            }.runTaskTimer(WitherParty.getInstance(), 5L, 5L);
         });
+
+        this.world.createExplosion(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ(), 1.0F, true, true);
 
         if(time)
             Bukkit.broadcastMessage(Messages.eliminatedTime.toString().replace("${PLAYER}", player.getName()));
