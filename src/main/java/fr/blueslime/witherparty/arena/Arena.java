@@ -116,13 +116,11 @@ public class Arena extends Game<GamePlayer>
         this.world.playSound(this.witherTable.getSpawn(), Sound.WITHER_SPAWN, 1.0F, 1.0F);
 
         this.wither = new CustomEntityWither(((CraftWorld) this.world).getHandle());
+        this.wither.setPosition(this.witherTable.getSpawn().getX(), this.witherTable.getSpawn().getY(), this.witherTable.getSpawn().getZ());
         ((CraftWorld) this.world).addEntity(this.wither, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        this.wither.teleportTo(this.witherTable.getSpawn(), false);
 
         for(GamePlayer player : this.getInGamePlayers().values())
-        {
             this.increaseStat(player.getUUID(), "played_games", 1);
-        }
 
         this.gameTime = Bukkit.getScheduler().runTaskTimerAsynchronously(WitherParty.getInstance(), new Runnable()
         {
