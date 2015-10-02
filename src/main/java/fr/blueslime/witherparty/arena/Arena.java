@@ -247,7 +247,7 @@ public class Arena extends Game<GamePlayer>
             org.bukkit.util.Vector witherVector = new org.bukkit.util.Vector(baseLocation.getX(), baseLocation.getY(), baseLocation.getZ());
 
             WitherSkull skull = this.world.spawn(baseLocation, WitherSkull.class);
-            skull.setVelocity(witherVector.add(entityVector).normalize().multiply(0.25F));
+            skull.setVelocity(witherVector.subtract(entityVector).normalize().multiply(0.25F));
             skull.setMetadata("to-destroy", new FixedMetadataValue(WitherParty.getInstance(), player.getUniqueId().toString()));
 
             new BukkitRunnable()
