@@ -4,6 +4,7 @@ import fr.blueslime.witherparty.WitherParty;
 import fr.blueslime.witherparty.arena.Arena;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 
@@ -14,10 +15,11 @@ public class WPCreatureSpawnEvent extends WPEvent implements Listener
         super(plugin, arena);
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void event(CreatureSpawnEvent event)
     {
-        if(event.getEntityType() == EntityType.WITHER || event.getEntityType() == EntityType.WITHER_SKULL)
-            event.setCancelled(true);
+        if(event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.CUSTOM)
+            if(event.getEntityType() != EntityType.WITHER_SKULL)
+                event.setCancelled(true);
     }
 }

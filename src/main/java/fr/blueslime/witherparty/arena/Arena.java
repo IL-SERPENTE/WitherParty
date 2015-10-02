@@ -2,6 +2,7 @@ package fr.blueslime.witherparty.arena;
 
 import fr.blueslime.witherparty.Messages;
 import fr.blueslime.witherparty.WitherParty;
+import net.minecraft.server.v1_8_R3.WorldServer;
 import net.samagames.api.SamaGamesAPI;
 import net.samagames.api.games.Game;
 import net.samagames.api.games.GamePlayer;
@@ -115,9 +116,13 @@ public class Arena extends Game<GamePlayer>
         this.world.createExplosion(this.witherTable.getSpawn().getX(), this.witherTable.getSpawn().getY(), this.witherTable.getSpawn().getZ(), 12.0F, false, false);
         this.world.playSound(this.witherTable.getSpawn(), Sound.WITHER_SPAWN, 1.0F, 1.0F);
 
-        this.wither = new CustomEntityWither(((CraftWorld) this.world).getHandle());
+        WorldServer w = ((CraftWorld) this.world).getHandle();
+
+        this.wither = new CustomEntityWither(w);
         this.wither.setPosition(this.witherTable.getSpawn().getX(), this.witherTable.getSpawn().getY(), this.witherTable.getSpawn().getZ());
-        ((CraftWorld) this.world).addEntity(this.wither, CreatureSpawnEvent.SpawnReason.CUSTOM);
+        w.addEntity(this.wither, CreatureSpawnEvent.SpawnReason.CUSTOM);
+
+        Bukkit.broadcastMessage(this.wither.locX + "; " + this.wither.locY + "; " + this.wither.locZ);
 
         for(GamePlayer player : this.getInGamePlayers().values())
             this.increaseStat(player.getUUID(), "played_games", 1);
@@ -161,8 +166,12 @@ public class Arena extends Game<GamePlayer>
         template.execute(player.getPlayerIfOnline(), this.second, this.third);
 
         this.addCoins(player.getPlayerIfOnline(), 50, "Premier");
-        this.addCoins(this.second, 25, "Second");
-        this.addCoins(this.third, 10, "Troisième");
+
+        if(this.second != null)
+            this.addCoins(this.second, 25, "Second");
+
+        if(this.third != null)
+            this.addCoins(this.third, 10, "Troisième");
 
         this.addStars(player.getPlayerIfOnline(), 2, "Victoire");
         this.increaseStat(player.getUUID(), "wins", 1);
