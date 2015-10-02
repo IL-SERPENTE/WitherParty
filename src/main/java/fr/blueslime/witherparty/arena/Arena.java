@@ -122,8 +122,6 @@ public class Arena extends Game<GamePlayer>
         this.wither.setPosition(this.witherTable.getSpawn().getX(), this.witherTable.getSpawn().getY(), this.witherTable.getSpawn().getZ());
         w.addEntity(this.wither, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
-        Bukkit.broadcastMessage(this.wither.locX + "; " + this.wither.locY + "; " + this.wither.locZ);
-
         for(GamePlayer player : this.getInGamePlayers().values())
             this.increaseStat(player.getUUID(), "played_games", 1);
 
@@ -243,8 +241,12 @@ public class Arena extends Game<GamePlayer>
 
         Bukkit.getScheduler().runTask(WitherParty.getInstance(), () ->
         {
-            WitherSkull skull = this.world.spawn(this.wither.getBukkitEntity().getLocation(), WitherSkull.class);
-            skull.setDirection(this.wither.getBukkitEntity().getLocation().getDirection().multiply(0.75F));
+            Location baseLocation = this.wither.getBukkitEntity().getLocation().add(0.0D, 2.0D, 0.0D);
+            org.bukkit.util.Vector entityVector = new org.bukkit.util.Vector(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ());
+            org.bukkit.util.Vector witherVector = new org.bukkit.util.Vector(baseLocation.getX(), baseLocation.getY(), baseLocation.getZ());
+
+            WitherSkull skull = this.world.spawn(baseLocation, WitherSkull.class);
+            skull.setVelocity(witherVector.add(entityVector).normalize().multiply(0.25F));
             skull.setMetadata("to-destroy", new FixedMetadataValue(WitherParty.getInstance(), player.getUniqueId().toString()));
         });
 
