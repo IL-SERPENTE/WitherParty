@@ -8,7 +8,6 @@ import net.samagames.api.games.Game;
 import net.samagames.api.games.GamePlayer;
 import net.samagames.api.games.themachine.messages.templates.PlayerLeaderboardWinTemplate;
 import net.samagames.tools.ColorUtils;
-import net.samagames.tools.ParticleEffect;
 import net.samagames.tools.Titles;
 import net.samagames.tools.scoreboards.ObjectiveSign;
 import org.bukkit.*;
@@ -16,10 +15,8 @@ import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.WitherSkull;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.inventory.meta.FireworkMeta;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -243,32 +240,8 @@ public class Arena extends Game<GamePlayer>
 
         this.wither.getBukkitEntity().getLocation().setDirection(playerTable.getSpawn().toVector().subtract(this.wither.getBukkitEntity().getLocation().toVector()));
 
-        Bukkit.getScheduler().runTask(WitherParty.getInstance(), () ->
-        {
-            org.bukkit.util.Vector entityVector = new org.bukkit.util.Vector(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ());
-            org.bukkit.util.Vector witherVector = this.wither.getBukkitEntity().getLocation().getDirection().normalize().multiply(0.5D);
-
-            WitherSkull skull = this.world.spawn(witherVector.toLocation(this.world), WitherSkull.class);
-            skull.setDirection(witherVector.subtract(entityVector).normalize());
-            skull.setMetadata("to-destroy", new FixedMetadataValue(WitherParty.getInstance(), player.getUniqueId().toString()));
-
-            new BukkitRunnable()
-            {
-                @Override
-                public void run()
-                {
-                    if(skull.isDead())
-                    {
-                        this.cancel();
-                        return;
-                    }
-
-                    ParticleEffect.FIREWORKS_SPARK.display(0.0F, 0.0F, 0.0F, 0.0F, 2, skull.getLocation());
-                }
-            }.runTaskTimer(WitherParty.getInstance(), 5L, 5L);
-        });
-
-        this.world.createExplosion(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ(), 5.0F, true, true);
+        this.world.strikeLightningEffect(player.getLocation());
+        this.world.createExplosion(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ(), 10.0F, true, true);
 
         if(time)
             Bukkit.broadcastMessage(Messages.eliminatedTime.toString().replace("${PLAYER}", player.getName()));
