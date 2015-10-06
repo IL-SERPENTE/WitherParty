@@ -245,11 +245,10 @@ public class Arena extends Game<GamePlayer>
 
         Bukkit.getScheduler().runTask(WitherParty.getInstance(), () ->
         {
-            Location baseLocation = this.wither.getBukkitEntity().getLocation().add(0.0D, 5.0D, 0.0D);
             org.bukkit.util.Vector entityVector = new org.bukkit.util.Vector(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ());
-            org.bukkit.util.Vector witherVector = new org.bukkit.util.Vector(baseLocation.getX(), baseLocation.getY(), baseLocation.getZ());
+            org.bukkit.util.Vector witherVector = this.wither.getBukkitEntity().getLocation().getDirection().normalize().multiply(0.5D);
 
-            WitherSkull skull = this.world.spawn(baseLocation, WitherSkull.class);
+            WitherSkull skull = this.world.spawn(witherVector.toLocation(this.world), WitherSkull.class);
             skull.setDirection(witherVector.subtract(entityVector).normalize());
             skull.setMetadata("to-destroy", new FixedMetadataValue(WitherParty.getInstance(), player.getUniqueId().toString()));
 
