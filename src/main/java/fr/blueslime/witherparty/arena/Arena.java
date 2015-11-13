@@ -240,8 +240,11 @@ public class Arena extends Game<GamePlayer>
 
         this.wither.getBukkitEntity().getLocation().setDirection(playerTable.getSpawn().toVector().subtract(this.wither.getBukkitEntity().getLocation().toVector()));
 
-        this.world.strikeLightningEffect(player.getLocation());
-        this.world.createExplosion(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ(), 10.0F, true, true);
+        Bukkit.getScheduler().runTask(WitherParty.getInstance(), () ->
+        {
+            this.world.strikeLightningEffect(player.getLocation());
+            this.world.createExplosion(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ(), 10.0F, true, true);
+        });
 
         if(time)
             Bukkit.broadcastMessage(Messages.eliminatedTime.toString().replace("${PLAYER}", player.getName()));
