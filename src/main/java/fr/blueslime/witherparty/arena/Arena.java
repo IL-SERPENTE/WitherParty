@@ -6,6 +6,7 @@ import net.minecraft.server.v1_8_R3.WorldServer;
 import net.samagames.api.SamaGamesAPI;
 import net.samagames.api.games.Game;
 import net.samagames.api.games.GamePlayer;
+import net.samagames.api.games.Status;
 import net.samagames.api.games.themachine.messages.templates.PlayerLeaderboardWinTemplate;
 import net.samagames.tools.ColorUtils;
 import net.samagames.tools.Titles;
@@ -93,6 +94,12 @@ public class Arena extends Game<GamePlayer>
     {
         super.handleLogout(player);
 
+        if(this.status == Status.WAITING_FOR_PLAYERS)
+        {
+            this.availableTables.add(this.getPlayerTable(player.getUniqueId()));
+            this.musicTables.remove(player.getUniqueId());
+        }
+
         if(!this.isSpectator(player))
         {
             this.setSpectator(player);
@@ -141,8 +148,7 @@ public class Arena extends Game<GamePlayer>
             public String formatTime(int time)
             {
                 int mins = time / 60;
-                int remainder = time - mins * 60;
-                int secs = remainder;
+                int secs = time - mins * 60;
 
                 String secsSTR = (secs < 10) ? "0" + secs : secs + "";
 
