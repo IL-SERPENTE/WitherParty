@@ -1,4 +1,4 @@
-package fr.blueslime.witherparty.arena;
+package fr.blueslime.witherparty;
 
 import net.minecraft.server.v1_8_R3.EntityWither;
 import net.minecraft.server.v1_8_R3.World;

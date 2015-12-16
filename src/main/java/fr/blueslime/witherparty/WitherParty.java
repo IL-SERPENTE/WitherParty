@@ -1,15 +1,13 @@
 package fr.blueslime.witherparty;
 
 import fr.blueslime.witherparty.arena.Arena;
+import fr.blueslime.witherparty.arena.ArenaListener;
 import fr.blueslime.witherparty.arena.ArenaManager;
-import fr.blueslime.witherparty.arena.CustomEntityWither;
-import fr.blueslime.witherparty.events.*;
 import net.minecraft.server.v1_8_R3.BiomeBase;
 import net.minecraft.server.v1_8_R3.EntityInsentient;
 import net.minecraft.server.v1_8_R3.EntityTypes;
 import net.minecraft.server.v1_8_R3.EntityWither;
 import net.samagames.api.SamaGamesAPI;
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Field;
@@ -18,34 +16,24 @@ import java.util.Map;
 
 public class WitherParty extends JavaPlugin
 {
-    private static WitherParty instance;
     private Arena arena;
 
     @Override
     public void onEnable()
     {
-        instance = this;
-
         this.registerEntity("WitherBoss", 64, EntityWither.class, CustomEntityWither.class);
-        this.arena = new ArenaManager().loadArena();
+        this.arena = new ArenaManager(this).loadArena();
         this.registerEvents();
 
         SamaGamesAPI.get().getGameManager().registerGame(this.arena);
     }
 
-    public void registerEvents()
+    private void registerEvents()
     {
-        Bukkit.getPluginManager().registerEvents(new WPBlockBreakEvent(this, this.arena), this);
-        Bukkit.getPluginManager().registerEvents(new WPBlockPlaceEvent(this, this.arena), this);
-        Bukkit.getPluginManager().registerEvents(new WPCreatureSpawnEvent(this, this.arena), this);
-        Bukkit.getPluginManager().registerEvents(new WPEntityDamageByEntityEvent(this, this.arena), this);
-        Bukkit.getPluginManager().registerEvents(new WPEntityDamageEvent(this, this.arena), this);
-        Bukkit.getPluginManager().registerEvents(new WPEntityExplodeEvent(this, this.arena), this);
-        Bukkit.getPluginManager().registerEvents(new WPPlayerInteractEvent(this, this.arena), this);
-        Bukkit.getPluginManager().registerEvents(new WPPlayerMoveEvent(this, this.arena), this);
+        this.getServer().getPluginManager().registerEvents(new ArenaListener(this.arena), this);
     }
 
-    public void registerEntity(String name, int id, Class<? extends EntityInsentient> nmsClass, Class<? extends EntityInsentient> customClass)
+    private void registerEntity(String name, int id, Class<? extends EntityInsentient> nmsClass, Class<? extends EntityInsentient> customClass)
     {
         BiomeBase[] biomes;
 
@@ -83,7 +71,7 @@ public class WitherParty extends JavaPlugin
         }
     }
 
-    private void registerEntityInEntityEnum(Class paramClass, String paramString, int paramInt) throws Exception
+    private void registerEntityInEntityEnum(Class paramClass, String paramString, int paramInt) throws NoSuchFieldException, IllegalAccessException
     {
         ((Map) this.getPrivateStatic(EntityTypes.class, "c")).put(paramString, paramClass);
         ((Map) this.getPrivateStatic(EntityTypes.class, "d")).put(paramClass, paramString);
@@ -92,21 +80,11 @@ public class WitherParty extends JavaPlugin
         ((Map) this.getPrivateStatic(EntityTypes.class, "g")).put(paramString, paramInt);
     }
 
-    private Object getPrivateStatic(Class clazz, String f) throws Exception
+    private Object getPrivateStatic(Class clazz, String f) throws NoSuchFieldException, IllegalAccessException
     {
         Field field = clazz.getDeclaredField(f);
         field.setAccessible(true);
 
         return field.get(null);
-    }
-
-    public Arena getArena()
-    {
-        return this.arena;
-    }
-
-    public static WitherParty getInstance()
-    {
-        return instance;
     }
 }

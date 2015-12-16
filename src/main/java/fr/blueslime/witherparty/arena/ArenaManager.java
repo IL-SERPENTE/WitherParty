@@ -2,26 +2,32 @@ package fr.blueslime.witherparty.arena;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import fr.blueslime.witherparty.WitherParty;
 import net.samagames.api.SamaGamesAPI;
 import net.samagames.tools.LocationUtils;
 import org.bukkit.entity.EntityType;
 
-import java.util.ArrayList;
-
 public class ArenaManager
 {
+    private final WitherParty plugin;
+
+    public ArenaManager(WitherParty plugin)
+    {
+        this.plugin = plugin;
+    }
+
     public Arena loadArena()
     {
-        JsonObject jsonArena = SamaGamesAPI.get().getGameManager().getGameProperties().getConfigs();
+        Arena arena = new Arena(this.plugin);
 
+        JsonObject jsonArena = SamaGamesAPI.get().getGameManager().getGameProperties().getConfigs();
         JsonArray jsonPlayerTables = jsonArena.get("playerTables").getAsJsonArray();
-        ArrayList<MusicTable> availableTables = new ArrayList<>();
 
         for(int i = 0; i < jsonPlayerTables.size(); i++)
         {
             JsonObject jsonPlayerTable = jsonPlayerTables.get(i).getAsJsonObject();
 
-            MusicTable musicTable = new MusicTable();
+            MusicTable musicTable = new MusicTable(arena);
             musicTable.setSpawn(LocationUtils.str2loc(jsonPlayerTable.get("spawn").getAsString()));
 
             JsonArray jsonPlayerTableInstruments = jsonPlayerTable.get("instruments").getAsJsonArray();
@@ -31,21 +37,18 @@ public class ArenaManager
                 JsonObject jsonPlayerTableInstrument = jsonPlayerTableInstruments.get(j).getAsJsonObject();
                 EntityType entity = EntityType.valueOf(jsonPlayerTableInstrument.get("mob").getAsString().toUpperCase());
 
-                if(entity == null)
-                    continue;
-
-                if(MobProperties.getByEntity(entity) == null)
+                if(entity == null || MobProperties.getByEntity(entity) == null)
                     continue;
 
                 musicTable.addInstrument(entity, LocationUtils.str2loc(jsonPlayerTableInstrument.get("location").getAsString()));
             }
 
-            availableTables.add(musicTable);
+            arena.addMusicTable(musicTable);
         }
 
         JsonObject jsonWitherTable = jsonArena.get("witherTable").getAsJsonObject();
 
-        MusicTable witherTable = new MusicTable();
+        MusicTable witherTable = new MusicTable(arena);
         witherTable.setSpawn(LocationUtils.str2loc(jsonWitherTable.get("spawn").getAsString()));
 
         JsonArray jsonWitherTableInstruments = jsonWitherTable.get("instruments").getAsJsonArray();
@@ -64,6 +67,8 @@ public class ArenaManager
             witherTable.addInstrument(entity, LocationUtils.str2loc(jsonWitherTableInstrument.get("location").getAsString()));
         }
 
-        return new Arena(availableTables, witherTable);
+        arena.setWitherTable(witherTable);
+
+        return arena;
     }
 }

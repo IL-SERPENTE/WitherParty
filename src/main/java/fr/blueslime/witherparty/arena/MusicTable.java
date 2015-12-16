@@ -1,6 +1,5 @@
 package fr.blueslime.witherparty.arena;
 
-import fr.blueslime.witherparty.WitherParty;
 import net.samagames.tools.GameUtils;
 import net.samagames.tools.ParticleEffect;
 import org.bukkit.Bukkit;
@@ -8,28 +7,31 @@ import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
 public class MusicTable
 {
-    private final HashMap<Location, EntityType> instruments;
+    private final Arena arena;
+    private final Map<Location, EntityType> instruments;
+
     private UUID owner;
     private Location spawn;
     private int notes;
 
-    public MusicTable()
+    public MusicTable(Arena arena)
     {
-        this.owner = null;
+        this.arena = arena;
         this.instruments = new HashMap<>();
+
+        this.owner = null;
         this.notes = 0;
     }
 
     public void play(EntityType entityType)
     {
-        for(Location location : this.instruments.keySet())
-            if(this.instruments.get(location) == entityType)
-                this.play(location);
+        this.instruments.keySet().stream().filter(location -> this.instruments.get(location) == entityType).forEach(this::play);
     }
 
     public void play(Location mobHead)
@@ -42,23 +44,20 @@ public class MusicTable
         else
             GameUtils.broadcastSound(mobProperties.getSound());
 
-        Arena arena = WitherParty.getInstance().getArena();
-
         ParticleEffect.NOTE.display(new ParticleEffect.NoteColor(new Random().nextInt(24)), normalized.clone().add(0.5D, 0.5D, 0.5D), 150.0D);
 
         if(this.owner != null)
         {
-            if(arena.getNoteAt(this.notes) != mobProperties.getEntityType())
+            if(this.arena.getNoteAt(this.notes) != mobProperties.getEntityType())
             {
-                arena.lose(Bukkit.getPlayer(this.owner), false);
+                this.arena.lose(Bukkit.getPlayer(this.owner), false);
             }
             else
             {
                 this.notes++;
 
                 if(this.notes == arena.getNoteCount())
-                    arena.correct(Bukkit.getPlayer(this.owner));
-
+                    this.arena.correct(Bukkit.getPlayer(this.owner));
             }
         }
     }

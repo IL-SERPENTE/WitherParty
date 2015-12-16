@@ -1,6 +1,6 @@
 package fr.blueslime.witherparty.arena;
 
-import fr.blueslime.witherparty.Messages;
+import fr.blueslime.witherparty.CustomEntityWither;
 import fr.blueslime.witherparty.WitherParty;
 import net.minecraft.server.v1_8_R3.WorldServer;
 import net.samagames.api.SamaGamesAPI;
@@ -8,17 +8,14 @@ import net.samagames.api.games.Game;
 import net.samagames.api.games.GamePlayer;
 import net.samagames.api.games.Status;
 import net.samagames.api.games.themachine.messages.templates.PlayerLeaderboardWinTemplate;
-import net.samagames.tools.ColorUtils;
+import net.samagames.tools.InventoryUtils;
 import net.samagames.tools.Titles;
 import net.samagames.tools.scoreboards.ObjectiveSign;
 import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.inventory.meta.FireworkMeta;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -26,14 +23,16 @@ import java.util.*;
 
 public class Arena extends Game<GamePlayer>
 {
-    private final HashMap<UUID, MusicTable> musicTables;
-    private final ArrayList<MusicTable> availableTables;
-    private final ArrayList<EntityType> notes;
-    private final MusicTable witherTable;
+    private final WitherParty plugin;
+    private final Map<UUID, MusicTable> musicTables;
+    private final List<MusicTable> availableTables;
+    private final List<EntityType> notes;
+    private final List<UUID> remaining;
+    private final ObjectiveSign objective;
     private final World world;
-    private ArrayList<UUID> remaining;
+
     private CustomEntityWither wither;
-    private ObjectiveSign objective;
+    private MusicTable witherTable;
     private Player second;
     private Player third;
     private BukkitTask dingTask;
@@ -42,16 +41,17 @@ public class Arena extends Game<GamePlayer>
     private int time;
     private boolean canCompose;
 
-    public Arena(ArrayList<MusicTable> availableTables, MusicTable witherTable)
+    public Arena(WitherParty plugin)
     {
         super("arcade", "WitherParty", "Construisez votre symphonie !", GamePlayer.class);
 
+        this.plugin = plugin;
         this.musicTables = new HashMap<>();
+        this.availableTables = new ArrayList<>();
         this.notes = new ArrayList<>();
         this.remaining = new ArrayList<>();
-        this.world = Bukkit.getWorlds().get(0);
-        this.availableTables = availableTables;
-        this.witherTable = witherTable;
+        this.world = plugin.getServer().getWorlds().get(0);
+
         this.wave = 0;
         this.time = 0;
         this.canCompose = false;
@@ -82,7 +82,8 @@ public class Arena extends Game<GamePlayer>
         this.availableTables.remove(0);
         this.musicTables.put(player.getUniqueId(), selected);
         this.objective.addReceiver(player);
-        this.setupPlayer(player);
+
+        InventoryUtils.cleanPlayer(player);
 
         player.teleport(selected.getSpawn());
         player.getInventory().setItem(8, this.gameManager.getCoherenceMachine().getLeaveItem());
@@ -132,7 +133,7 @@ public class Arena extends Game<GamePlayer>
             player.getPlayerIfOnline().setLevel(0);
         }
 
-        this.gameTime = Bukkit.getScheduler().runTaskTimerAsynchronously(WitherParty.getInstance(), new Runnable()
+        this.gameTime = this.plugin.getServer().getScheduler().runTaskTimerAsynchronously(this.plugin, new Runnable()
         {
             private int time = 0;
 
@@ -149,7 +150,7 @@ public class Arena extends Game<GamePlayer>
                 int mins = time / 60;
                 int secs = time - mins * 60;
 
-                String secsSTR = (secs < 10) ? "0" + secs : secs + "";
+                String secsSTR = (secs < 10) ? "0" + Integer.toString(secs) : Integer.toString(secs);
 
                 return mins + ":" + secsSTR;
             }
@@ -180,46 +181,7 @@ public class Arena extends Game<GamePlayer>
         this.addStars(player.getPlayerIfOnline(), 2, "Victoire");
         this.increaseStat(player.getUUID(), "wins", 1);
 
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(WitherParty.getInstance(), new Runnable()
-        {
-            int number = (int) (10 * 1.5);
-            int count = 0;
-
-            public void run()
-            {
-                if (this.count >= this.number || player.getPlayerIfOnline() == null)
-                    return;
-
-                Firework fw = (Firework) player.getPlayerIfOnline().getWorld().spawnEntity(player.getPlayerIfOnline().getLocation(), EntityType.FIREWORK);
-                FireworkMeta fwm = fw.getFireworkMeta();
-
-                Random r = new Random();
-
-                int rt = r.nextInt(4) + 1;
-                FireworkEffect.Type type = FireworkEffect.Type.BALL;
-                if (rt == 1) type = FireworkEffect.Type.BALL;
-                if (rt == 2) type = FireworkEffect.Type.BALL_LARGE;
-                if (rt == 3) type = FireworkEffect.Type.BURST;
-                if (rt == 4) type = FireworkEffect.Type.CREEPER;
-                if (rt == 5) type = FireworkEffect.Type.STAR;
-
-                int r1i = r.nextInt(17) + 1;
-                int r2i = r.nextInt(17) + 1;
-                Color c1 = ColorUtils.getColor(r1i);
-                Color c2 = ColorUtils.getColor(r2i);
-
-                FireworkEffect effect = FireworkEffect.builder().flicker(r.nextBoolean()).withColor(c1).withFade(c2).with(type).trail(r.nextBoolean()).build();
-
-                fwm.addEffect(effect);
-
-                int rp = r.nextInt(2) + 1;
-                fwm.setPower(rp);
-
-                fw.setFireworkMeta(fwm);
-
-                this.count++;
-            }
-        }, 5L, 5L);
+        this.effectsOnWinner(player.getPlayerIfOnline());
 
         this.handleGameEnd();
     }
@@ -245,18 +207,18 @@ public class Arena extends Game<GamePlayer>
 
         this.wither.getBukkitEntity().getLocation().setDirection(playerTable.getSpawn().toVector().subtract(this.wither.getBukkitEntity().getLocation().toVector()));
 
-        Bukkit.getScheduler().runTask(WitherParty.getInstance(), () ->
+        this.plugin.getServer().getScheduler().runTask(this.plugin, () ->
         {
             this.world.strikeLightningEffect(player.getLocation());
             this.world.createExplosion(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ(), 10.0F, true, true);
         });
 
         if(time)
-            Bukkit.broadcastMessage(Messages.eliminatedTime.toString().replace("${PLAYER}", player.getName()));
+            this.coherenceMachine.getMessageManager().writeCustomMessage(ChatColor.RED + player.getName() + " s'est fait éliminé car il n'a pas composé dans les temps !", true);
         else
-            Bukkit.broadcastMessage(Messages.eliminated.toString().replace("${PLAYER}", player.getName()));
+            this.coherenceMachine.getMessageManager().writeCustomMessage(ChatColor.RED + player.getName() + " a fait une fausse note !", true);
 
-        Bukkit.getScheduler().runTaskLater(WitherParty.getInstance(), () ->
+        this.plugin.getServer().getScheduler().runTaskLater(this.plugin, () ->
         {
             this.setSpectator(player);
             this.checkEnd(player);
@@ -266,7 +228,7 @@ public class Arena extends Game<GamePlayer>
     public void correct(Player player)
     {
         this.remaining.remove(player.getUniqueId());
-        Bukkit.broadcastMessage(Messages.correct.toString().replace("${PLAYER}", player.getName()));
+        this.coherenceMachine.getMessageManager().writeCustomMessage(ChatColor.GREEN + player.getName() + " a reproduit la mélodie correctement !", true);
 
         player.setLevel(0);
 
@@ -305,11 +267,10 @@ public class Arena extends Game<GamePlayer>
 
         this.wave++;
 
+        this.coherenceMachine.getMessageManager().writeCustomMessage(ChatColor.GOLD + "Ecoutez...", true);
+
         for(GamePlayer player : this.getInGamePlayers().values())
-        {
-            player.getPlayerIfOnline().sendMessage(Messages.listen.toString());
             Titles.sendTitle(player.getPlayerIfOnline(), 0, 20 * 2, 20, ChatColor.GOLD + "♪", ChatColor.GOLD + "" + ChatColor.BOLD + "Ecoutez...");
-        }
 
         this.time = 0;
 
@@ -333,13 +294,12 @@ public class Arena extends Game<GamePlayer>
 
                 if(this.loops == (wave + 1))
                 {
-                    Bukkit.getScheduler().runTaskLater(WitherParty.getInstance(), () ->
+                    plugin.getServer().getScheduler().runTaskLater(plugin, () ->
                     {
+                        coherenceMachine.getMessageManager().writeCustomMessage(ChatColor.GREEN + "A vous de jouer !", true);
+
                         for(GamePlayer player : getInGamePlayers().values())
-                        {
-                            player.getPlayerIfOnline().sendMessage(Messages.yourTurn.toString());
                             Titles.sendTitle(player.getPlayerIfOnline(), 0, 20 * 2, 20, ChatColor.GREEN + "♪", ChatColor.GREEN + "" + ChatColor.BOLD + "A vous de jouer !");
-                        }
 
                         canCompose = true;
 
@@ -361,30 +321,16 @@ public class Arena extends Game<GamePlayer>
                                         player.playSound(player.getLocation(), Sound.NOTE_PIANO, 1.0F, 1.0F);
                                 }
 
-                                if(this.timer == 0)
-                                    if(getInGamePlayers().size() != 1)
-                                        nextWave();
+                                if(this.timer == 0 && getInGamePlayers().size() != 1)
+                                    nextWave();
                             }
-                        }.runTaskTimerAsynchronously(WitherParty.getInstance(), 20L * 2, 20L * 2);
+                        }.runTaskTimerAsynchronously(plugin, 20L * 2, 20L * 2);
                     }, 20L);
 
                     this.cancel();
                 }
             }
-        }.runTaskTimer(WitherParty.getInstance(), 20L * 3, 20L * 3);
-    }
-
-    public void setupPlayer(Player player)
-    {
-        player.setGameMode(GameMode.ADVENTURE);
-        player.setHealth(20.0D);
-        player.setSaturation(20);
-        player.getInventory().clear();
-        player.setExp(0.0F);
-        player.setLevel(0);
-
-        for(PotionEffect pe : player.getActivePotionEffects())
-            player.removePotionEffect(pe.getType());
+        }.runTaskTimer(this.plugin, 20L * 3, 20L * 3);
     }
 
     public void updateScoreboard()
@@ -395,6 +341,16 @@ public class Arena extends Game<GamePlayer>
         this.objective.setLine(3, ChatColor.GRAY + "Joueurs: " + ChatColor.WHITE + this.remaining.size());
 
         this.objective.updateLines();
+    }
+
+    public void addMusicTable(MusicTable musicTable)
+    {
+        this.availableTables.add(musicTable);
+    }
+
+    public void setWitherTable(MusicTable witherTable)
+    {
+        this.witherTable = witherTable;
     }
 
     public EntityType getNoteAt(int array)
@@ -414,6 +370,6 @@ public class Arena extends Game<GamePlayer>
 
     public boolean canCompose(Player player)
     {
-        return (this.canCompose && this.remaining.contains(player.getUniqueId()));
+        return this.canCompose && this.remaining.contains(player.getUniqueId());
     }
 }
