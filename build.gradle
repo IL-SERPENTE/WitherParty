@@ -26,7 +26,7 @@ repositories {
 }
 
 sonarRunner {
-    sonarPropeties {
+    sonarProperties {
         property "sonar.login", sonaruser
         property "sonar.password", sonarpass
     }
