@@ -69,7 +69,6 @@ public class Arena extends Game<GamePlayer>
     {
         super.handlePostRegistration();
         this.coherenceMachine.setStartCountdownCatchPhrase("Préparez vos instruments !");
-        this.coherenceMachine.setNameShortcut("WP");
     }
 
     @Override
