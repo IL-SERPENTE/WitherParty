@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'sonar-runner'
 
-group = 'fr.blueslime'
+group = 'net.samagames'
 version = '1.0.0'
 archivesBaseName = 'WitherParty'
 
@@ -27,7 +27,7 @@ repositories {
 
 sonarRunner {
     sonarProperties {
-        property "sonar.projectKey", group + "." + archivesBaseName.toString().toLowerCase()
+        property "sonar.projectKey", group + "." + archivesBaseName
         property "sonar.projectName", archivesBaseName
 
         property "sonar.login", sonaruser
@@ -36,7 +36,7 @@ sonarRunner {
 }
 
 dependencies {
-    compile(group: 'net.samagames', name: 'SamaGamesAPI', version: '1.0.0-SNAPSHOT', changing: true) {
+    compile(group: 'net.samagames', name: 'SamaGamesAPI', version: '1.0.0', changing: true) {
         transitive = false
     }
 
