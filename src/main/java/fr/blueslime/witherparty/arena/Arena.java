@@ -85,6 +85,7 @@ public class Arena extends Game<GamePlayer>
 
         InventoryUtils.cleanPlayer(player);
 
+        player.setGameMode(GameMode.ADVENTURE);
         player.teleport(selected.getSpawn());
         player.getInventory().setItem(8, this.gameManager.getCoherenceMachine().getLeaveItem());
     }
