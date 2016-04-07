@@ -316,6 +316,8 @@ public class Arena extends Game<GamePlayer>
                                 for(UUID remainingPlayer : remaining)
                                 {
                                     Player player = Bukkit.getPlayer(remainingPlayer);
+                                    if (player == null)
+                                        continue ;
                                     player.setLevel(this.timer);
 
                                     if(this.timer < 5)
