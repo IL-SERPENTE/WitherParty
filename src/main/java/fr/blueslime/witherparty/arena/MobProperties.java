@@ -7,14 +7,14 @@ import java.util.Random;
 
 public enum MobProperties
 {
-    CHICKEN(EntityType.CHICKEN, Sound.CHICKEN_IDLE),
-    PIG(EntityType.PIG, Sound.PIG_IDLE),
-    SHEEP(EntityType.SHEEP, Sound.SHEEP_IDLE),
-    COW(EntityType.COW, Sound.COW_IDLE),
-    MEOW(EntityType.OCELOT, Sound.CAT_MEOW),
-    WOLF(EntityType.WOLF, Sound.WOLF_WHINE),
-    ZOMBIE(EntityType.ZOMBIE, Sound.ZOMBIE_IDLE),
-    SPIDER(EntityType.SPIDER, Sound.SPIDER_IDLE);
+    CHICKEN(EntityType.CHICKEN, Sound.ENTITY_CHICKEN_AMBIENT),
+    PIG(EntityType.PIG, Sound.ENTITY_PIG_AMBIENT),
+    SHEEP(EntityType.SHEEP, Sound.ENTITY_SHEEP_AMBIENT),
+    COW(EntityType.COW, Sound.ENTITY_COW_AMBIENT),
+    MEOW(EntityType.OCELOT, Sound.ENTITY_CAT_AMBIENT),
+    WOLF(EntityType.WOLF, Sound.ENTITY_WOLF_WHINE),
+    ZOMBIE(EntityType.ZOMBIE, Sound.ENTITY_ZOMBIE_AMBIENT),
+    SPIDER(EntityType.SPIDER, Sound.ENTITY_SPIDER_AMBIENT);
 
     private final EntityType entityType;
     private final Sound sound;

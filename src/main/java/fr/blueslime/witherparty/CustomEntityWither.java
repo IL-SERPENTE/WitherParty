@@ -1,7 +1,8 @@
 package fr.blueslime.witherparty;
 
-import net.minecraft.server.v1_8_R3.EntityWither;
-import net.minecraft.server.v1_8_R3.World;
+import net.minecraft.server.v1_9_R1.EntityWither;
+import net.minecraft.server.v1_9_R1.SoundEffect;
+import net.minecraft.server.v1_9_R1.World;
 
 public class CustomEntityWither extends EntityWither
 {
@@ -22,20 +23,20 @@ public class CustomEntityWither extends EntityWither
     }
 
     @Override
-    protected String z()
+    protected SoundEffect bR()
     {
-        return "";
+        return null;
     }
 
     @Override
-    protected String bp()
+    protected SoundEffect bS()
     {
-        return "";
+        return null;
     }
 
     @Override
-    protected String bo()
+    protected SoundEffect G()
     {
-        return "";
+        return null;
     }
 }

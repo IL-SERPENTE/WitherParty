@@ -3,10 +3,10 @@ package fr.blueslime.witherparty;
 import fr.blueslime.witherparty.arena.Arena;
 import fr.blueslime.witherparty.arena.ArenaListener;
 import fr.blueslime.witherparty.arena.ArenaManager;
-import net.minecraft.server.v1_8_R3.BiomeBase;
-import net.minecraft.server.v1_8_R3.EntityInsentient;
-import net.minecraft.server.v1_8_R3.EntityTypes;
-import net.minecraft.server.v1_8_R3.EntityWither;
+import net.minecraft.server.v1_9_R1.BiomeBase;
+import net.minecraft.server.v1_9_R1.EntityInsentient;
+import net.minecraft.server.v1_9_R1.EntityTypes;
+import net.minecraft.server.v1_9_R1.EntityWither;
 import net.samagames.api.SamaGamesAPI;
 import org.bukkit.plugin.java.JavaPlugin;
 
