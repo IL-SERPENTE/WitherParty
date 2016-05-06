@@ -13,6 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class WitherParty extends JavaPlugin
 {
@@ -35,11 +36,11 @@ public class WitherParty extends JavaPlugin
 
     private void registerEntity(String name, int id, Class<? extends EntityInsentient> nmsClass, Class<? extends EntityInsentient> customClass)
     {
-        BiomeBase[] biomes;
+        Set<BiomeBase> biomes;
 
         try
         {
-            biomes = (BiomeBase[]) getPrivateStatic(BiomeBase.class, "biomes");
+            biomes = (Set<BiomeBase>) getPrivateStatic(BiomeBase.class, "i");
             this.registerEntityInEntityEnum(customClass, name, id);
         }
         catch (Exception e)
@@ -53,7 +54,7 @@ public class WitherParty extends JavaPlugin
             if (biomeBase == null)
                 continue;
 
-            for (String field : new String[]{"at", "au", "av", "aw"})
+            for (String field : new String[]{"u", "v", "w", "x"})
             {
                 try
                 {

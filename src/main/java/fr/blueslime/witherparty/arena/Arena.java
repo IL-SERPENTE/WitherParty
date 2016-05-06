@@ -130,7 +130,7 @@ public class Arena extends Game<GamePlayer>
 
         for(GamePlayer player : this.getInGamePlayers().values())
         {
-            this.increaseStat(player.getUUID(), "played_games", 1);
+            //this.increaseStat(player.getUUID(), "played_games", 1);
             player.getPlayerIfOnline().setLevel(0);
         }
 
@@ -163,7 +163,7 @@ public class Arena extends Game<GamePlayer>
     public void win(GamePlayer player)
     {
         this.gameTime.cancel();
-        this.increaseStat(player.getUUID(), "wins", 1);
+        //this.increaseStat(player.getUUID(), "wins", 1);
 
         this.dingTask.cancel();
         this.canCompose = false;
@@ -180,7 +180,7 @@ public class Arena extends Game<GamePlayer>
             this.addCoins(this.third, 10, "Troisième");
 
         this.addStars(player.getPlayerIfOnline(), 2, "Victoire");
-        this.increaseStat(player.getUUID(), "wins", 1);
+        //this.increaseStat(player.getUUID(), "wins", 1);
 
         this.effectsOnWinner(player.getPlayerIfOnline());
 
