@@ -2,7 +2,7 @@ package fr.blueslime.witherparty.arena;
 
 import fr.blueslime.witherparty.CustomEntityWither;
 import fr.blueslime.witherparty.WitherParty;
-import net.minecraft.server.v1_9_R1.WorldServer;
+import net.minecraft.server.v1_9_R2.WorldServer;
 import net.samagames.api.SamaGamesAPI;
 import net.samagames.api.games.Game;
 import net.samagames.api.games.GamePlayer;
@@ -12,7 +12,7 @@ import net.samagames.tools.InventoryUtils;
 import net.samagames.tools.Titles;
 import net.samagames.tools.scoreboards.ObjectiveSign;
 import org.bukkit.*;
-import org.bukkit.craftbukkit.v1_9_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_9_R2.CraftWorld;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.CreatureSpawnEvent;

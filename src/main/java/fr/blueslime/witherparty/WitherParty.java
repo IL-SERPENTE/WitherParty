@@ -3,10 +3,10 @@ package fr.blueslime.witherparty;
 import fr.blueslime.witherparty.arena.Arena;
 import fr.blueslime.witherparty.arena.ArenaListener;
 import fr.blueslime.witherparty.arena.ArenaManager;
-import net.minecraft.server.v1_9_R1.BiomeBase;
-import net.minecraft.server.v1_9_R1.EntityInsentient;
-import net.minecraft.server.v1_9_R1.EntityTypes;
-import net.minecraft.server.v1_9_R1.EntityWither;
+import net.minecraft.server.v1_9_R2.BiomeBase;
+import net.minecraft.server.v1_9_R2.EntityInsentient;
+import net.minecraft.server.v1_9_R2.EntityTypes;
+import net.minecraft.server.v1_9_R2.EntityWither;
 import net.samagames.api.SamaGamesAPI;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -27,6 +27,7 @@ public class WitherParty extends JavaPlugin
         this.registerEvents();
 
         SamaGamesAPI.get().getGameManager().registerGame(this.arena);
+        SamaGamesAPI.get().getGameManager().setKeepPlayerCache(true);
     }
 
     private void registerEvents()
